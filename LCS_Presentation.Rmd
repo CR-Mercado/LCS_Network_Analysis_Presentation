@@ -1,0 +1,10 @@
+---
+title: "LCS_Presentation"
+author: "Carlos Mercado"
+date: "February 23, 2021"
+output: html_document
+---
+
+# Data Simulation 
+
+In my work in public health, we leverage data 
