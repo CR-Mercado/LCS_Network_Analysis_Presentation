@@ -1,4 +1,4 @@
-#' 1 - Describe Simulated Data
+#' 1 - Describe & Analyze Simulated Data
 #' 
 #' Problem: A country has identified signs of widespread impact to 
 #' child development, possibly a disease or toxic substance outbreak.
@@ -24,6 +24,9 @@ nrow(child_outbreak_tbl)
 # table of severity
 table( child_outbreak_tbl$severity )
 
+# most common affiliations 
+
+sort ( table( unlist(child_outbreak_tbl[, 4:8]) ) )
 
 # plot of severity across age
 ggplot(child_outbreak_tbl,
