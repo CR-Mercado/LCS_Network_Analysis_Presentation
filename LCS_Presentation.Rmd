@@ -42,6 +42,13 @@ if( !require(igraph) ){
    # library(igraph) # once per R session
 } 
 
+if( !require(rpart) ){ 
+  stop("You need to install rpart to continue")
+   # Code you need 
+   # install.packages("rpart") # once per computer 
+   # library(rpart) # once per R session
+} 
+
 ```
 # 0 - Data Simulation
  
@@ -77,18 +84,12 @@ for(i in 1:1000){
 age <- abs ( rpois(n = 1000, lambda =  6) ) + 1
 age[age > 12] <- 1
 
- # Severity will be poisson distributed with lambda = 1 and minimum of 1.
-   # values greater than 3, made to be 1.
-
-severity <- rpois(1000, 1) + 1
-severity[severity > 3] <- 1
-  
 # Generate a data frame to hold the data 
 
 outbreak_tbl <- data.frame(
   child_id = child_id, 
-  age = age, 
-  severity = severity
+  age = age,
+  severity = NA
 )
 
  # City, State will be randomized at the child level to result in between 2-5
@@ -121,7 +122,7 @@ num_cities[num_cities > 5] <- 2
 
 # get a random distribution of cities to have visited 
 city_number <- rpois(n = 1000, lambda = 3) + 1
-city_number[city_number > 10] <- 1
+city_number[city_number > 8] <- 1
 city_probabilites <- table(city_number)/1000
 
 # for each child
@@ -140,9 +141,15 @@ for(i in 1:1000){
   
   child_travel_history[i, 2:6] <- temp_cities
   
-  }
+   # Severity will be poisson distributed with lambda = number of cities.
+
+severity <- floor ( mean(rpois(1000, lambda = num_cities[i])) + 1 )
+severity[severity > 3] <- 1
+outbreak_tbl$severity[i] <- severity
+}
 
 child_outbreak_tbl <- merge(outbreak_tbl, child_travel_history, by = "child_id")
+
 
 # save separately 
 write.csv(child_outbreak_tbl, "child_outbreak_simulation.csv", row.names = FALSE)  
@@ -210,7 +217,7 @@ child_travel_list <- split(child_travel_history, child_id)
 child_affiliation <- { 
   
  # create an empty affiliation matrix   
- temp_matrix <- matrix(data = rep(0, 10000), nrow = 1000)
+ temp_matrix <- matrix(data = rep(0, 8000), nrow = 1000)
  rownames(temp_matrix) <- child_travel_history$child_id
  colnames(temp_matrix) <- city_states
  
@@ -256,9 +263,8 @@ edge.betweenness.community(place_to_place_graph)
 
 # Generate visnetwork version of graph
 place_to_place_visnetwork <- toVisNetworkData(place_to_place_graph)
-
-
-
+visNetwork(place_to_place_visnetwork$nodes, place_to_place_visnetwork$edges) %>% 
+  visIgraphLayout()
 
 ```
 
@@ -290,7 +296,15 @@ outbreak_model_data <- {
 
   # drop child id, get age, severity, associated_city, associated_state
   
-  temp_outbreak[ , c("severity","age","associated_state")]
+  temp_outbreak <- unique ( group_by(temp_outbreak, child_id) %>% 
+    summarise(num_cities = length(associated_city),
+              num_states = length(unique(associated_state)),
+              age = age, 
+              severity = severity
+              ) ) 
+  
+  temp_outbreak$severity <- as.factor(temp_outbreak$severity)
+  temp_outbreak[ , c("severity","age", "num_cities","num_states")]
 }
 
 # show output as visnetwork
@@ -300,3 +314,5 @@ visTree(object = ctree_model,
 )
 
 ```
+
+
